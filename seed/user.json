@@ -1,0 +1,15 @@
+[
+    {
+        "_id": "64103519039f5ddcbc34b508",
+        "name": "Admin",
+        "password": "$2a$10$CIeQ5ILKS4Msgd0sI7Zm6.wBvkcsuIvK6ri/rdTzVvUCHK9cLRwpi",
+        "username" : "admin_23",
+        "email": "admin@narola.email",
+        "userRole" : 1,
+        "userType" : null,
+        "avatar":"def.png",
+        "isActive": true,
+        "isDeleted": false,
+        "__v": 0
+    }
+]
