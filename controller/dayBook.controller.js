@@ -1,7 +1,7 @@
-const DayBook = require('../../model/DayBook')
-const Activity = require('../../model/ActivityDayBook')
+const DayBook = require('../model/DayBook')
+const Activity = require('../model/ActivityDayBook')
 const paginate = require('../helper/paginate')
-const User = require('../../model/User')
+const User = require('../model/User')
 const mongoose = require('mongoose')
 const moment = require('moment')
 

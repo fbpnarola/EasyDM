@@ -5,15 +5,11 @@ const path = require('path')
 const cors = require('cors')
 require('dotenv').config()
 require('./util/connection')
-// require('./seed').userSeed()
+// require('./seed').userSeed()   //It will create default Admin user. After set of project and database, comment this line.
 
-const route = require('./route/index')
 app.use(cors())
 app.use(express.json())
 app.use(morgan('tiny'))
-
-// app.set('view engine', 'ejs');
-// app.set('views', path.join(__dirname, '/views'));
 
 app.use("/avatar", express.static(path.join(__dirname, '/public/avatar')));
 
@@ -25,7 +21,7 @@ app.use((req, res, next) => {
     );
     next();
 })
-app.use(route)
+app.use(require('./route/index'))
 
 const PORT = process.env.PORT || 8080
 app.listen(PORT, () => {

@@ -1,5 +1,5 @@
-const PageView = require('../../model/PageViews')
-const Activity = require('../../model/ActivityPageViews')
+const PageView = require('../model/PageViews')
+const Activity = require('../model/ActivityPageViews')
 const paginate = require('../helper/paginate')
 const moment = require('moment')
 
