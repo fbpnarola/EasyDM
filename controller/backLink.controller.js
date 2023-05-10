@@ -99,7 +99,7 @@ exports.getBackLinks = async (req, res) => {
         }
         option.query['isDeleted'] = false
         const backLinks = await paginate(option, BackLinks);
-        return res.json({ data: [backLinks], status: false, message: "All the Back Links." });
+        return res.json({ data: [backLinks], status: true, message: "Data Listed Successfully" });
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }

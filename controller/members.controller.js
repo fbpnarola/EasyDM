@@ -11,7 +11,7 @@ exports.getAllMembers = async (req, res) => {
         option.query['userRole'] = { $ne: 1 }
 
         const member = await paginate(option, User);
-        return res.json({ data: [member], status: true, message: "All member's data!!" });
+        return res.json({ data: [member], status: true, message: "Data Listed Successfully" });
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }

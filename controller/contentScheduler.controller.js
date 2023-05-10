@@ -122,7 +122,7 @@ exports.getContentScheduler = async (req, res, next) => {
         option.query['isDeleted'] = false
 
         const scheduler = await paginate(option, ContentScheduler);
-        return res.json({ data: [scheduler], status: false, message: "Get all Content Scheduler." });
+        return res.json({ data: [scheduler], status: true, message: "Data Listed Successfully" });
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }

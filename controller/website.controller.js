@@ -10,7 +10,6 @@ exports.createWebsite = async (req, res) => {
             return res.json({ data: [], status: false, message: "Website already created with same name!!" })
         }
         data.addedBy = req.logInid
-        // const website = new Website(data)
         const checkData = await Website.create(data)
         if (!checkData) {
             return res.json({ data: [], status: false, message: 'Something went wrong! Not able to add website!!' })
@@ -130,7 +129,7 @@ exports.getWebsites = async (req, res, next) => {
         option.query['isDeleted'] = false
 
         const websites = await paginate(option, Website);
-        return res.json({ data: [websites], status: false, message: "All the websites" });
+        return res.json({ data: [websites], status: true, message: "Data Listed Successfully" });
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }

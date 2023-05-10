@@ -219,7 +219,7 @@ exports.getDayBook = async (req, res) => {
             PageNo: pageNo
         }
         const DayBookData = await DayBook.aggregate(query).skip(skip).limit(limit)
-        return res.status(200).json({ data: [DayBookData, Pagination], status: true, message: "All user's the day book data" })
+        return res.status(200).json({ data: [DayBookData, Pagination], status: true, message: "Data Listed Successfully" })
 
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
@@ -239,7 +239,7 @@ exports.getDayBookOfUser = async (req, res) => {
         option.query['addedBy'] = checkUser._id
 
         const dayBookOfUser = await paginate(option, DayBook);
-        return res.json({ data: [dayBookOfUser], status: true, message: "User's day book data." })
+        return res.json({ data: [dayBookOfUser], status: true, message: "Data Listed Successfully" })
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }

@@ -93,12 +93,11 @@ exports.deletePageView = async (req, res) => {
 exports.getPageView = async (req, res) => {
     try {
         const option = { ...req.body };
-        if (!option.hasOwnProperty('query')) {
-            option['query'] = {};
-        }
-        option.query['isDeleted'] = false
+        // if (!option.hasOwnProperty('query')) {
+        //     option['query'] = {};
+        // }
         const pageView = await paginate(option, PageView);
-        return res.json({ data: [pageView], status: false, message: "All the page view" });
+        return res.json({ data: [pageView], status: true, message: "Data Listed Successfully" });
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }
