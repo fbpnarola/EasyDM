@@ -21,7 +21,7 @@ var checkUser = async (req, res, next) => {
             if (tokenData === undefined) {
                 return res.json({ data: [], status: false, message: 'Token expired!!' })
             }
-            const user = await User.findById(tokenData)
+            const user = await User.findOne({ $and: [{ _id: tokenData._id }, { isActive: true }] })
             req.logInid = tokenData;
             req.type = user.userRole
             next();
