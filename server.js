@@ -5,7 +5,7 @@ const path = require('path')
 const cors = require('cors')
 require('dotenv').config()
 require('./util/connection')
-// require('./seed').userSeed()   //It will create default Admin user. After set of project and database, comment this line.
+// require('./seed').userSeed()   //It will create default Admin user. After setup project and database, comment this line.
 
 app.use(cors())
 app.use(express.json())
