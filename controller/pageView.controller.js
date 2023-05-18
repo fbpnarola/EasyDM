@@ -93,9 +93,6 @@ exports.deletePageView = async (req, res) => {
 exports.getPageView = async (req, res) => {
     try {
         const option = { ...req.body };
-        // if (!option.hasOwnProperty('query')) {
-        //     option['query'] = {};
-        // }
         const pageView = await paginate(option, PageView);
         return res.json({ data: [pageView], status: true, message: "Data Listed Successfully" });
     } catch (error) {
@@ -133,53 +130,6 @@ exports.viewActivity = async (req, res) => {
         return res.json({ data: [], status: false, message: error.message })
     }
 }
-
-// exports.history = async (req, res) => {
-//     try {
-//         const date1 = Date.now() + -365 * 24 * 3600000
-//         const endDate = new Date(date1).toISOString()
-//         const betweenDate = { $lte: new Date, $gte: endDate }
-//         const LastYearData = await PageView.find({ $and: [{ isDeleted: false }, { monthYear: betweenDate }] })
-//         const data = [], months = []
-//         LastYearData.forEach(element => {
-//             data.push(element.numberOfPageviews)
-//             let month = element.monthYear.toLocaleString('default', { month: 'short' });
-//             let year = new Date(element.monthYear).getFullYear();
-//             months.push(`${month}-${year}`)
-//         });
-
-//         return res.json({ data: { data: data, months: months }, status: true, message: "Last 1 Year's Data." })
-//     } catch (error) {
-//         return res.json({ data: [], status: false, message: error.message })
-//     }
-// }
-
-// exports.history = async (req, res) => {
-//     try {
-//         let monthYear = [], data = []
-//         for (let i = 24; i >= 2; i--) {
-//             const date = Date.now() + -365 * i * 3600000
-//             const nextMonth = Date.now() + -365 * (i - 2) * 3600000
-//             const dateFormat = new Date(date).toISOString()
-//             const nextDateFormat = new Date(nextMonth).toISOString()
-//             const month = new Date(date).toLocaleString('default', { month: 'short' })
-//             const year = new Date(date).getFullYear();
-//             const betweenDate = { $lte: nextDateFormat, $gte: dateFormat }
-//             const monthWise = await PageView.find({ $and: [{ isDeleted: false }, { monthYear: betweenDate }, { webpage: req.params.id }] })
-//             let count = 0
-//             monthWise.forEach(element => {
-//                 count = count + element.numberOfPageviews
-//             });
-//             monthYear.push(`${month} - ${year}`)
-//             data.push(count)
-//             i--
-//         }
-//         return res.json({ data: { data: data, months: monthYear }, status: true, message: "Last 1 Year's Data." })
-
-//     } catch (error) {
-//         return res.json({ data: [], status: false, message: error.message })
-//     }
-// }
 
 exports.history = async (req, res) => {
     try {

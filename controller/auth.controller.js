@@ -16,28 +16,13 @@ exports.registration = async (req, res) => {
             return res.json({ data: [], status: false, message: 'User already exits!!' });
         }
         data.userRole = 2
-        // const password = Math.random().toString(36).slice(-8);
-        // data.password = password
         const userData = new User(data)
         const user1 = await userData.save()
         if (!user1) {
             return res.json({ data: [], status: false, message: `User not Registered!!` })
         }
-        // transport.sendMail({
-        //     to: data.email,
-        //     from: 'fparmar986@gmail.com',
-        //     subject: 'Registered Successfully!!',
-        //     html: `<h1>Get your password!!</h1><br />
-        //                     <p>Hello ${data.name}!!</p><br />
-        //                     <p>Your password is : ${password}</p>`
-        // })
-        // if (!transport) {
-        //     return res.status(404).json({ message: 'Somthing went wrong!!Can not sent mail to your emailid!!' })
-        // }
-        // return res.json({data: [], status: true, message: `User's registered successfully!! Mail sent to your emailid!!!` })
         user1.password = ""
         return res.json({ data: [user1], status: true, message: `User's registered successfully!!` })
-
     }
     catch (error) {
         return res.json({ data: [], status: false, message: error.message })
@@ -105,15 +90,6 @@ exports.forgotPassLink = async (req, res) => {
             return res.json({ data: [], status: false, message: 'Email does no exist!!' })
         }
         else {
-            // const cnt = user.wrongAttempt;
-            // if (cnt > 10) {
-            //     return res.status(404).json({ message: 'Max attempt for resending mail is over!!' })
-            // }
-            // const token = jwt.sign({
-            //     username: user.username,
-            //     _id: user._id.toString()
-            // }, process.env.SECRET_KEY, { expiresIn: '1m' });
-
             const password = Math.random().toString(36).slice(-8);
             const hashPass = await bcrypt.hash(password, 10)
             await User.findOneAndUpdate({ email: email },

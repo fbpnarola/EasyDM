@@ -1,7 +1,6 @@
 const DayBook = require('../model/DayBook')
 const Activity = require('../model/ActivityDayBook')
 const paginate = require('../helper/paginate')
-const User = require('../model/User')
 const mongoose = require('mongoose')
 const moment = require('moment')
 
@@ -105,9 +104,6 @@ exports.getDayBook = async (req, res) => {
         }
         let query = [
             {
-                $sort: { 'createdAt': -1 }
-            },
-            {
                 $match: {
                     $and: filter
                 }
@@ -169,6 +165,7 @@ exports.getDayBook = async (req, res) => {
                 }
             }
         }
+        query.push({ $sort: { createdAt: -1 } })
         query.push(
             {
                 $group:
@@ -189,12 +186,12 @@ exports.getDayBook = async (req, res) => {
                             "webpageName": "$webPageData.webpage",
                             "webpageURL": "$webPageData.webpageUrl",
                             "webpage": "$webpage",
+                            "createdAt": "$createdAt"
                         }
                     }
                 }
             }
         )
-
         const addPagination = await DayBook.aggregate(query)
         let totalData = addPagination.length
         let pageNo = 1, perPage = 10
@@ -228,16 +225,10 @@ exports.getDayBook = async (req, res) => {
 
 exports.getDayBookOfUser = async (req, res) => {
     try {
-        const checkUser = await User.findById(req.params.id)
-        if (!checkUser) {
-            return res.json({ data: [], status: false, message: 'This user is not exist!!' })
-        }
         const option = { ...req.body };
         if (!option.hasOwnProperty('query')) {
             option['query'] = {};
         }
-        option.query['addedBy'] = checkUser._id
-
         const dayBookOfUser = await paginate(option, DayBook);
         return res.json({ data: [dayBookOfUser], status: true, message: "Data Listed Successfully" })
     } catch (error) {
@@ -277,65 +268,123 @@ exports.viewActivity = async (req, res) => {
     }
 }
 
-// exports.userDayBookActivity = async (req, res) => {
-//     try {
-//         // const checkUser = await User.findById(req.params.id)
-//         // if (!checkUser) {
-//         //     return res.json({ data: [], status: false, message: "This User is not exist!!" })
-//         // }
+exports.userDateWiseDayBook = async (req, res) => {
+    try {
+        let query = [
+            {
+                $lookup: {
+                    from: 'User',
+                    localField: 'addedBy',
+                    foreignField: '_id',
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$isDeleted", false] },
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: 'userData',
+                }
+            },
+            {
+                $unwind: '$userData'
+            },
+            {
+                $lookup: {
+                    from: 'Website',
+                    localField: 'webpage',
+                    foreignField: '_id',
+                    as: 'webPageData',
+                }
+            },
+            {
+                $unwind: '$webPageData'
+            },
+            {
+                $sort: { createdAt: -1 }
+            }
+        ]
+        if (req.body && req.body.hasOwnProperty('search')) {
+            if (req.body.search.dateFrom) {
+                if (!req.body.search.dateTo) {
+                    query.push(
+                        {
+                            $match: { 'creationDate': { $gte: new Date(req.body.search.dateFrom) } }
+                        }
+                    )
+                }
+                else {
+                    query.push(
+                        {
+                            $match: {
+                                $and: [
+                                    { 'creationDate': { $gte: new Date(req.body.search.dateFrom) } },
+                                    { 'creationDate': { $lte: new Date(req.body.search.dateTo) } }
+                                ]
+                            }
+                        }
+                    )
+                }
+            }
+        }
+        query.push({
+            $group:
+            {
+                _id: ['$userData._id', '$creationDate'],
+                totalHours: { $sum: '$hours' },
+                info: {
+                    $push: {
+                        "userName": "$userData.name",
+                        "avatar": "$userData.avatar",
+                        "addedBy": "$userData._id",
+                        "dayBookId": "$_id",
+                        "hours": "$hours",
+                        "creationDate": "$creationDate",
+                        "details": "$details",
+                        "category": "$category",
+                        "member": "$addedBy",
+                        "webpageName": "$webPageData.webpage",
+                        "webpageURL": "$webPageData.webpageUrl",
+                        "webpage": "$webpage",
+                        "createdAt": "$createdAt"
+                    }
+                }
+            }
+        })
+        const addPagination = await DayBook.aggregate(query)
+        let totalData = addPagination.length
+        let pageNo = 1, perPage = 10
+        if (req.body && req.body.hasOwnProperty('pageNo') && req.body.hasOwnProperty('perPage')) {
+            pageNo = req.body.pageNo
+            perPage = req.body.perPage
+        }
+        let page = (pageNo) ? parseInt(pageNo) : 1
+        let limit = (perPage) ? parseInt(perPage) : 50
+        let skip = (page - 1) * limit
 
-//         let monthYear = [], hours = [], members = [], filters = [{}]
-//         const date = new Date();
-//         const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-//         var dateFrom = moment(firstDay).subtract(1, 'years')
-//         let lastMOnth, users = {}, category = {}, webpage = {}
-//         for (let i = 1; i <= 12; i++) {
-//             let nextMonth = moment(dateFrom).add(i, 'months')
-//             lastMOnth = moment(nextMonth).subtract(1, 'months')
-//             if (req.body && req.body.hasOwnProperty('filter')) {
-//                 if (req.body.filter.dateFrom) {
-//                     nextMonth = moment(req.body.filter.dateFrom).add(i, 'months')
-//                     lastMOnth = moment(nextMonth).subtract(1, 'months')
-//                 }
-//                 if (req.body.filter.member) {
-//                     filters.push({ addedBy: req.body.filter.member })
-//                 }
-//                 if (req.body.filter.category) {
-//                     category = req.body.filter.category
-//                     // filters.push({ category: req.body.filter.category })
-//                     console.log('category data ==>', Object.keys(category).length)
-//                     // if (Object.keys(category).length > 0) {
-//                     filters.push({ 'category': category })
-//                     // }
-//                 }
-//                 if (req.body.filter.webpage) {
-//                     filters.push({ webpage: req.body.filter.webpage })
+        let endIndex = page * limit
+        if (endIndex < totalData) {
+            endIndex = page * limit
+        }
+        else {
+            endIndex = totalData
+        }
 
-//                 }
-//             }
-//             const month = moment(lastMOnth).format('MMM').toString();
-//             const year = moment(lastMOnth).format('YYYY').toString();
-//             const betweenDate = { $gte: new Date(lastMOnth), $lte: new Date(nextMonth) }
-//             filters.push({ creationDate: betweenDate })
+        const Pagination = {
+            TotalPageData: endIndex,
+            PageNo: pageNo
+        }
+        const DayBookData = await DayBook.aggregate(query).skip(skip).limit(limit)
+        return res.status(200).json({ data: [DayBookData, Pagination], status: true, message: "Data Listed Successfully" })
 
-//             console.log('Filters data ==>', filters)
-//             const monthWise = await DayBook.find({ $and: [{ creationDate: betweenDate }, { member: { $in: req.body.filter.members } }] })
-//                 .populate('addedBy', 'name')
-//             let count = 0, member = []
-//             monthWise.forEach(element => {
-//                 count = count + element.hours
-//                 member.push(element.addedBy.name)
-//             });
-//             monthYear.push(`${month} - ${year}`)
-//             hours.push(count)
-//             members.push(member)
-//         }
-//         return res.json({ data: { hours: hours, months: monthYear, membersList: members }, status: true, message: "Last 1 Year's Data." })
-//     } catch (error) {
-//         console.log('Error ==>', error)
-//         return res.json({ data: [], status: false, message: error.message })
-//     }
-// }
+    } catch (error) {
+        return res.json({ data: [], status: false, message: error.message })
+    }
+}
 
 exports.userDayBookActivity = async (req, res) => {
     try {
@@ -356,9 +405,6 @@ exports.userDayBookActivity = async (req, res) => {
             }
         }
         let query = [
-            {
-                $sort: { 'createdAt': -1 }
-            },
             {
                 $match: {
                     $and: filter
@@ -412,6 +458,11 @@ exports.userDayBookActivity = async (req, res) => {
         }
         query.push(
             {
+                $sort: { 'createdAt': -1 }
+            }
+        )
+        query.push(
+            {
                 $group:
                 {
                     _id: '$userData._id',
@@ -428,6 +479,7 @@ exports.userDayBookActivity = async (req, res) => {
                             "category": "$category",
                             "member": "$addedBy",
                             "webpage": "$webpage",
+                            "createdAt": "$createdAt"
                         }
                     }
                 }
