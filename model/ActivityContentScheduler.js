@@ -14,6 +14,9 @@ const ActivityContentSchedulerSchema = new mongoose.Schema({
     },
     newData: Object,
     oldData: Object,
+    updated_ref_link: [String],
+    deleted_ref_link: [String],
+    added_ref_link: [String],
     activityName: {
         type: String,
         enum: ['Created', 'Updated'],

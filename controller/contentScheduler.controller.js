@@ -63,16 +63,23 @@ exports.updateContentScheduler = async (req, res) => {
         if (Object.keys(schedulerData).length === 0) {
             return res.json({ data: [], status: true, message: "Cannot update empty object!!" })
         }
-        const updatedFields = [], updatedValues = []
-        let fieldList = ['-_id']
+        const updatedFields = []
+        let fieldList = ['-_id'], updated_ref_link = [], deleted_ref_link = [], added_ref_link = []
         Object.keys(req.body).forEach(function (fields) {
             fieldList.push(fields)
             updatedFields.push(' ' + fields)
         })
-        Object.values(req.body).forEach(function (value) {
-            updatedValues.push(value)
-        })
         let oldSchedulerData = await ContentScheduler.findById(req.params.id).select(fieldList)
+        if (req.body.hasOwnProperty('updated_ref_link')) {
+            updated_ref_link = req.body.updated_ref_link
+        }
+        if (req.body.hasOwnProperty('deleted_ref_link')) {
+            deleted_ref_link = req.body.deleted_ref_link
+        }
+        if (req.body.hasOwnProperty('added_ref_link')) {
+            added_ref_link = req.body.added_ref_link
+        }
+
         if (req.body.hasOwnProperty('webpage') && req.body.hasOwnProperty('assignedBy') && req.body.hasOwnProperty('writtenBy')) {
             oldSchedulerData = await ContentScheduler.findById(req.params.id).select(fieldList)
             oldSchedulerData._doc.webpage = oldSchedulerData.webpage.webpage
@@ -87,7 +94,7 @@ exports.updateContentScheduler = async (req, res) => {
         if (!req.body.hasOwnProperty('webpage') && req.body.hasOwnProperty('assignedBy') && !req.body.hasOwnProperty('writtenBy')) {
             oldSchedulerData = await ContentScheduler.findById(req.params.id).select(fieldList)
                 .populate('assignedBy', 'name email')
-            oldSchedulerData._doc.assignedBy = oldSchedulerData.assignedBy.nam
+            oldSchedulerData._doc.assignedBy = oldSchedulerData.assignedBy.name
         }
         if (!req.body.hasOwnProperty('webpage') && !req.body.hasOwnProperty('assignedBy') && req.body.hasOwnProperty('writtenBy')) {
             oldSchedulerData = await ContentScheduler.findById(req.params.id).select(fieldList)
@@ -171,6 +178,9 @@ exports.updateContentScheduler = async (req, res) => {
             contentSchedulerId: checkScheduler._id,
             addedBy: req.logInid,
             activityName: 'Updated',
+            updated_ref_link: updated_ref_link,
+            deleted_ref_link: deleted_ref_link,
+            added_ref_link: added_ref_link,
             oldData: oldSchedulerData,
             newData: updatedData,
             details: 'Updated ' + updatedFields + ' Fields.',
