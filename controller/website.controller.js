@@ -3,6 +3,9 @@ const Activity = require('../model/ActivityWebsite')
 const paginate = require('../helper/paginate')
 const moment = require('moment')
 const PageViews = require('../model/PageViews')
+const BackLinks = require('../model/BackLinks')
+const User = require('../model/User')
+const mongoose = require('mongoose')
 
 exports.createWebsite = async (req, res) => {
     try {
@@ -108,8 +111,8 @@ exports.updateWebsite = async (req, res) => {
             webpageId: checkWebsite._id,
             addedBy: req.logInid,
             activityName: 'Updated',
-            oldData: old,
-            newData: newData,
+            oldData: oldWebsiteData,
+            newData: updatedData,
             details: 'Updated ' + updatedFields + ' Fields.',
             time: checkUpdate.updatedAt
         }
@@ -150,60 +153,172 @@ exports.getWebsites = async (req, res, next) => {
     }
 }
 
-exports.dashboard = async (req, res, next) => {
-    try {
-        var lastMonth = moment().subtract(3, 'month').startOf('month').format('YYYY-MM-DD hh:mm')
-        var latestMonth = moment().startOf('month').format('YYYY-MM-DD hh:mm')
+// exports.dashboard = async (req, res, next) => {
+//     try {
+//         var lastMonth = moment().subtract(3, 'month').startOf('month').format('YYYY-MM-DD hh:mm')
+//         var latestMonth = moment().startOf('month').format('YYYY-MM-DD hh:mm')
 
-        let query = [
-            {
+//         let query = [
+//             {
+//                 $lookup: {
+//                     from: 'Website',
+//                     localField: 'webpage',
+//                     foreignField: '_id',
+//                     as: 'webpageData',
+//                 }
+//             },
+//             {
+//                 $unwind: '$webpageData'
+//             },
+//             {
+//                 $match: {
+//                     $and: [
+//                         { 'monthYear': { $gt: new Date(lastMonth) } },
+//                         { 'monthYear': { $lte: new Date(latestMonth) } }
+//                     ]
+//                 }
+//             },
+//             {
+//                 $group:
+//                 {
+//                     _id: '$webpage',
+//                     totalViews: { $sum: '$numberOfPageviews' },
+//                     info: {
+//                         $push: {
+//                             "userName": "$webPageData.assignedBy",
+//                             "webpageName": "$webPageData.webpage",
+//                             "webpageURL": "$webPageData.webpageUrl",
+//                             "webpage": "$webpage",
+//                             "publishedOn": "$publishedOn",
+//                             "monthYear": "$monthYear",
+//                             "numberOfPageviews": "$numberOfPageviews",
+//                             "readability": "$readability",
+//                             "seo": "$seo",
+//                             "toneOfVoice": "$toneOfVoice",
+//                             "originality": "$originality",
+//                             "contentScore": "$contentScore"
+//                         }
+//                     }
+//                 }
+//             },
+//             {
+//                 $sort: { totalViews: -1 }
+//             }
+//         ]
+//         const mostViewedWebpages = await PageViews.aggregate(query)
+//         return res.json({ data: { data: mostViewedWebpages }, status: true, message: "Last 3 Month's Data." })
+//     } catch (error) {
+//         return res.json({ data: [], status: false, message: error.message })
+//     }
+// }
+
+exports.dashboard = async (req, res) => {
+    try {
+        const userRoleCheck = await User.findById(req.logInid)
+        let webpageLookup = {
+            $lookup: {
+                from: 'Website',
+                localField: 'webpage',
+                foreignField: '_id',
+                as: 'webpageData',
+            }
+        }
+        if (userRoleCheck.userRole !== 1) {
+            webpageLookup = {
                 $lookup: {
                     from: 'Website',
                     localField: 'webpage',
                     foreignField: '_id',
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $in: [new mongoose.Types.ObjectId(req.logInid._id), '$assignedTo']
+                                }
+                            }
+                        },
+                    ],
                     as: 'webpageData',
                 }
-            },
+            }
+        }
+        let backLinkQuery = [
+            webpageLookup,
             {
                 $unwind: '$webpageData'
-            },
-            {
-                $match: {
-                    $and: [
-                        { 'monthYear': { $gt: new Date(lastMonth) } },
-                        { 'monthYear': { $lte: new Date(latestMonth) } }
-                    ]
-                }
             },
             {
                 $group:
                 {
                     _id: '$webpage',
-                    totalViews: { $sum: '$numberOfPageviews' },
+                    totalLinks: { $sum: '$numberOfBacklinks' },
                     info: {
                         $push: {
-                            "userName": "$webPageData.assignedBy",
-                            "webpageName": "$webPageData.webpage",
-                            "webpageURL": "$webPageData.webpageUrl",
+                            "webpageName": '$webpageData.webpage',
+                            "webpageURL": '$webpageData.webpageUrl',
+                            "webpage": "$webpage",
+                            "publishedOn": "$publishedOn",
+                            "monthYear": "$monthYear",
+                            "numberOfBacklinks": "$numberOfBacklinks",
+                        }
+                    }
+                }
+            }
+        ]
+
+        let pageViewQuery = [
+            webpageLookup,
+            {
+                $unwind: '$webpageData'
+            },
+            {
+                $group:
+                {
+                    _id: '$webpage',
+                    totalView: { $sum: '$numberOfPageviews' },
+                    info: {
+                        $push: {
+                            "webpageName": '$webpageData.webpage',
+                            "webpageURL": '$webpageData.webpageUrl',
                             "webpage": "$webpage",
                             "publishedOn": "$publishedOn",
                             "monthYear": "$monthYear",
                             "numberOfPageviews": "$numberOfPageviews",
-                            "readability": "$readability",
-                            "seo": "$seo",
-                            "toneOfVoice": "$toneOfVoice",
-                            "originality": "$originality",
-                            "contentScore": "$contentScore"
                         }
                     }
                 }
-            },
-            {
-                $sort: { totalViews: -1 }
             }
         ]
-        const mostViewedWebpages = await PageViews.aggregate(query)
-        return res.json({ data: { data: mostViewedWebpages }, status: true, message: "Last 3 Month's Data." })
+        const BackLinkData = await BackLinks.aggregate(backLinkQuery)
+        const PageViewData = await PageViews.aggregate(pageViewQuery)
+        const date = new Date();
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
+        var dateFrom = moment(firstDay).subtract(1, 'years')
+        let lastMOnth, totalBackLinks = [], totalPageViews = []
+        for (let i = 1; i <= 12; i++) {
+            let nextMonth = moment(dateFrom).add(i, 'months')
+            lastMOnth = moment(nextMonth).subtract(1, 'months')
+            const month = moment(lastMOnth).format('MMM').toString();
+            const year = moment(lastMOnth).format('YYYY').toString();
+            let backLinkCnt = 0, pageViewCnt = 0
+            BackLinkData.forEach(element => {
+                element.info.forEach(element1 => {
+                    if (element1.monthYear >= lastMOnth && element1.monthYear <= nextMonth) {
+                        backLinkCnt = backLinkCnt + element1.numberOfBacklinks
+                    }
+                });
+            });
+            totalBackLinks.push({ month: `${month}-${year}`, totalBackLinks: backLinkCnt })
+            PageViewData.forEach(element => {
+                element.info.forEach(element1 => {
+                    if (element1.monthYear >= lastMOnth && element1.monthYear <= nextMonth) {
+                        pageViewCnt = pageViewCnt + element1.numberOfPageviews
+                    }
+                });
+            });
+            totalPageViews.push({ month: `${month}-${year}`, totalPageViews: pageViewCnt })
+        }
+        return res.json({ data: { totalBackLinks, totalPageViews }, status: true, message: 'Data for dashboard!!' })
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }
