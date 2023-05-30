@@ -1,11 +1,11 @@
 const Website = require('../model/Website')
 const Activity = require('../model/ActivityWebsite')
 const paginate = require('../helper/paginate')
-const moment = require('moment')
 const PageViews = require('../model/PageViews')
 const BackLinks = require('../model/BackLinks')
 const User = require('../model/User')
 const mongoose = require('mongoose')
+const monthYearWiseData = require('../helper/monthYearWiseData')
 
 exports.createWebsite = async (req, res) => {
     try {
@@ -291,33 +291,8 @@ exports.dashboard = async (req, res) => {
         ]
         const BackLinkData = await BackLinks.aggregate(backLinkQuery)
         const PageViewData = await PageViews.aggregate(pageViewQuery)
-        const date = new Date();
-        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-        var dateFrom = moment(firstDay).subtract(1, 'years')
-        let lastMOnth, totalBackLinks = [], totalPageViews = []
-        for (let i = 1; i <= 12; i++) {
-            let nextMonth = moment(dateFrom).add(i, 'months')
-            lastMOnth = moment(nextMonth).subtract(1, 'months')
-            const month = moment(lastMOnth).format('MMM').toString();
-            const year = moment(lastMOnth).format('YYYY').toString();
-            let backLinkCnt = 0, pageViewCnt = 0
-            BackLinkData.forEach(element => {
-                element.info.forEach(element1 => {
-                    if (element1.monthYear >= lastMOnth && element1.monthYear <= nextMonth) {
-                        backLinkCnt = backLinkCnt + element1.numberOfBacklinks
-                    }
-                });
-            });
-            totalBackLinks.push({ month: `${month}-${year}`, totalBackLinks: backLinkCnt })
-            PageViewData.forEach(element => {
-                element.info.forEach(element1 => {
-                    if (element1.monthYear >= lastMOnth && element1.monthYear <= nextMonth) {
-                        pageViewCnt = pageViewCnt + element1.numberOfPageviews
-                    }
-                });
-            });
-            totalPageViews.push({ month: `${month}-${year}`, totalPageViews: pageViewCnt })
-        }
+        const totalBackLinks = await monthYearWiseData.month_year_wise_data(BackLinkData, "monthYear", "numberOfBacklinks")
+        const totalPageViews = await monthYearWiseData.month_year_wise_data(PageViewData, "monthYear", "numberOfPageviews")
         return res.json({ data: { totalBackLinks, totalPageViews }, status: true, message: 'Data for dashboard!!' })
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })

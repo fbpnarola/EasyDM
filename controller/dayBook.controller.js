@@ -2,7 +2,7 @@ const DayBook = require('../model/DayBook')
 const Activity = require('../model/ActivityDayBook')
 const paginate = require('../helper/paginate')
 const mongoose = require('mongoose')
-const moment = require('moment')
+const monthYearWiseData = require('../helper/monthYearWiseData')
 
 exports.createDayBook = async (req, res) => {
     try {
@@ -486,26 +486,8 @@ exports.userDayBookActivity = async (req, res) => {
             }
         )
         const DayBookData = await DayBook.aggregate(query)
-        const date = new Date();
-        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-        var dateFrom = moment(firstDay).subtract(1, 'years')
-        let lastMOnth, historyData = []
-        for (let i = 1; i <= 12; i++) {
-            let nextMonth = moment(dateFrom).add(i, 'months')
-            lastMOnth = moment(nextMonth).subtract(1, 'months')
-            const month = moment(lastMOnth).format('MMM').toString();
-            const year = moment(lastMOnth).format('YYYY').toString();
-            let hoursCnt = 0
-            DayBookData.forEach(element => {
-                element.info.forEach(element1 => {
-                    if (element1.creationDate >= lastMOnth && element1.creationDate <= nextMonth) {
-                        hoursCnt = hoursCnt + element1.hours
-                    }
-                });
-            });
-            historyData.push({ month: `${month}-${year}`, totalHours: hoursCnt })
-        }
-        return res.status(200).json({ data: [historyData], status: true, message: "All user's the day book data" })
+        const finalData = await monthYearWiseData.month_year_wise_data(DayBookData, "creationDate", "hours")
+        return res.status(200).json({ data: finalData, status: true, message: "All user's the day book data" })
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }
