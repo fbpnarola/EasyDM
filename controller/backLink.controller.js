@@ -2,6 +2,7 @@ const BackLinks = require('../model/BackLinks')
 const Activity = require('../model/ActivityBackLinks')
 const paginate = require('../helper/paginate')
 const moment = require('moment')
+const monthYearWiseData = require('../helper/monthYearWiseData')
 
 exports.createBackLinks = async (req, res) => {
     try {
@@ -138,26 +139,30 @@ exports.viewActivity = async (req, res) => {
 
 exports.history = async (req, res) => {
     try {
-        let monthYear = [], data = []
-        const date = new Date();
-        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-        var dateFrom = moment(firstDay).subtract(1, 'years')
-        let lastMOnth
-        for (let i = 1; i <= 12; i++) {
-            let nextMonth = moment(dateFrom).add(i, 'months')
-            lastMOnth = moment(nextMonth).subtract(1, 'months')
-            const month = moment(lastMOnth).format('MMM')
-            const year = moment(lastMOnth).format('YYYY');
-            const betweenDate = { $lte: nextMonth, $gt: lastMOnth }
-            const monthWise = await BackLinks.find({ $and: [{ isDeleted: false }, { monthYear: betweenDate }, { webpage: req.params.id }] })
-            let count = 0
-            monthWise.forEach(element => {
-                count = count + element.numberOfBacklinks
-            });
-            monthYear.push(`${month} - ${year}`)
-            data.push(count)
-        }
-        return res.json({ data: { data: data, months: monthYear }, status: true, message: "Last 1 Year's Data." })
+        const condition = [{ webpage: req.params.id }]
+        const finalData = await monthYearWiseData.month_year_wise_data_model(BackLinks, condition, "numberOfBacklinks")
+        // let monthYear = [], data = [], finalData = []
+        // const date = new Date();
+        // const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
+        // var dateFrom = moment(firstDay).subtract(1, 'years')
+        // let lastMOnth
+        // for (let i = 1; i <= 12; i++) {
+        //     let nextMonth = moment(dateFrom).add(i, 'months')
+        //     lastMOnth = moment(nextMonth).subtract(1, 'months')
+        //     const month = moment(lastMOnth).format('MMM')
+        //     const year = moment(lastMOnth).format('YYYY');
+        //     const betweenDate = { $lte: nextMonth, $gt: lastMOnth }
+        //     const monthWise = await BackLinks.find({ $and: [{ isDeleted: false }, { monthYear: betweenDate }, { webpage: req.params.id }] })
+        //     let count = 0
+        //     monthWise.forEach(element => {
+        //         count = count + element.numberOfBacklinks
+        //     });
+        //     monthYear.push(`${month} - ${year}`)
+        //     data.push(count)
+        //     finalData.push({ month: `${month} - ${year}`, CntVariable: count })
+        //     console.log('Data Display ==>', finalData)
+        // }
+        return res.json({ data: finalData, status: true, message: "Last 1 Year's Data." })
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }
