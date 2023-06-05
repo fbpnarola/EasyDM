@@ -5,13 +5,14 @@ const transport = require('../util/sendmail')
 
 exports.registration = async (req, res) => {
     try {
+        console.log('Body data ==>', req.body)
         const data = { ...req.body };
         let avatar = 'def.png';
         if (req.file !== undefined) {
             avatar = req.file.filename;
         }
         data.avatar = avatar
-        const userCheck = await User.findOne({ $and: [{ email: data.email }, { username: data.username }] })
+        const userCheck = await User.findOne({ email: data.email })
         if (userCheck) {
             return res.json({ data: [], status: false, message: 'User already exits!!' });
         }
@@ -34,17 +35,10 @@ exports.login = async (req, res) => {
     try {
         const { username, password } = req.body
         if (username === "") {
-            return res.json({ data: [], status: false, message: "Please enter username or emailID or mobileNo. to login!!!" })
-        }
-        let filter = {
-            $or: [
-                { username: username },
-                { email: username },
-                { mobileNo: username }
-            ]
+            return res.json({ data: [], status: false, message: "Please enter email to login!!!" })
         }
 
-        let user = await User.findOne(filter)
+        let user = await User.findOne({ email: username })
         if (user.isActive === false) {
             return res.json({ data: [], status: false, message: 'Your account is deactivated!!' });
         }
