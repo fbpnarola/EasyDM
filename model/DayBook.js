@@ -10,7 +10,12 @@ const DayBookSchema = new mongoose.Schema({
     webpage: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Website',
-        require: true
+        default: null
+    },
+    contentScheduler: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ContentScheduler',
+        default: null
     },
     category: {
         type: String,

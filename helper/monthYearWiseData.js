@@ -1,10 +1,9 @@
 const moment = require('moment')
 exports.month_year_wise_data = async (data, dateField, cntField) => {
     try {
-        const date = new Date();
-        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-        var dateFrom = moment(firstDay).subtract(1, 'years')
-        let lastMonth, historyData = []
+        const historyData = []
+        var dateFrom = moment().subtract(1, 'year').startOf('month').format('YYYY-MM-DD hh:mm')
+        let lastMonth
         for (let i = 1; i <= 12; i++) {
             let nextMonth = moment(dateFrom).add(i, 'months')
             lastMonth = moment(nextMonth).subtract(1, 'months')
@@ -13,17 +12,8 @@ exports.month_year_wise_data = async (data, dateField, cntField) => {
             let hoursCnt = 0
             data.forEach(element => {
                 element.info.forEach(element1 => {
-                    let finalField, finalCntField
-                    Object.entries(element1).forEach(([key, val]) => {
-                        if (key === dateField) {
-                            finalField = val
-                        }
-                        if (key === cntField) {
-                            finalCntField = val
-                        }
-                    });
-                    if (finalField >= lastMonth && finalField <= nextMonth) {
-                        hoursCnt = hoursCnt + finalCntField
+                    if (element1[dateField] >= lastMonth && element1[dateField] <= nextMonth) {
+                        hoursCnt = hoursCnt + element1[cntField]
                     }
                 });
             });
@@ -35,12 +25,10 @@ exports.month_year_wise_data = async (data, dateField, cntField) => {
     }
 }
 
-exports.month_year_wise_data_model = async (model, conditionFields, cntField) => {
+exports.month_year_wise_data_model = async (model, conditionArray, dateField, cntField) => {
     try {
         const finalData = []
-        const date = new Date();
-        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-        var dateFrom = moment(firstDay).subtract(1, 'years')
+        var dateFrom = moment().subtract(1, 'year').startOf('month').format('YYYY-MM-DD hh:mm')
         let lastMonth
         for (let i = 1; i <= 12; i++) {
             let nextMonth = moment(dateFrom).add(i, 'months')
@@ -48,19 +36,14 @@ exports.month_year_wise_data_model = async (model, conditionFields, cntField) =>
             const month = moment(lastMonth).format('MMM')
             const year = moment(lastMonth).format('YYYY');
             const betweenDate = { $lte: nextMonth, $gt: lastMonth }
-            let count = 0, finalCntField = 0
-            conditionFields.push({ monthYear: betweenDate })
-            const monthWise = await model.find({ $and: conditionFields })
+            let count = 0
+            conditionArray.push({ [dateField]: betweenDate })
+            const monthWise = await model.find({ $and: conditionArray })
             monthWise.forEach(element => {
-                Object.entries(element._doc).forEach(([key, val]) => {
-                    if (key === cntField) {
-                        finalCntField = val
-                    }
-                });
-                count = count + finalCntField
+                count = count + element[cntField]
             });
             finalData.push({ month: `${month} - ${year}`, totalCount: count })
-            conditionFields.pop()
+            conditionArray.pop()
         }
         return finalData
     } catch (error) {

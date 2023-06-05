@@ -3,22 +3,31 @@ const Activity = require('../model/ActivityDayBook')
 const paginate = require('../helper/paginate')
 const mongoose = require('mongoose')
 const monthYearWiseData = require('../helper/monthYearWiseData')
+const ContentScheduler = require('../model/ContentScheduler')
 
 exports.createDayBook = async (req, res) => {
     try {
-        let dayBookData = req.body.data
-        dayBookData.forEach(async (element) => {
-            element.addedBy = req.logInid
-            const dayBook = await DayBook.create(element)
-            const activityData = {
-                dayBookId: dayBook._id,
-                addedBy: req.logInid,
-                details: 'Day Book Created.',
-                time: dayBook.createdAt
-            }
-            await Activity.create(activityData)
-        });
-        return res.json({ data: [], status: true, message: 'Day book created successfully!!' })
+        if (req.body && req.body.hasOwnProperty('data')) {
+            let dayBookData = req.body.data
+            dayBookData.forEach(async (element) => {
+                if (element.contentScheduler) {
+                    const getCS = await ContentScheduler.findById(element.contentScheduler)
+                    element.webpage = getCS.webpage
+                }
+                element.addedBy = req.logInid
+                const dayBook = await DayBook.create(element)
+                const activityData = {
+                    dayBookId: dayBook._id,
+                    addedBy: req.logInid,
+                    details: 'Day Book Created.',
+                    time: dayBook.createdAt
+                }
+                await Activity.create(activityData)
+            });
+            return res.json({ data: [], status: true, message: 'Day book created successfully!!' })
+        }
+        return res.json({ data: [], status: false, message: 'Kindly enter data!!' })
+
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }
@@ -58,8 +67,8 @@ exports.updateDayBook = async (req, res) => {
             time: checkBook.updatedAt
         }
         await Activity.create(activityData)
-        const n = await DayBook.findById(req.params.id)
-        return res.json({ data: [n], status: true, message: 'Day Book updated!!' })
+        const updatedData = await DayBook.findById(req.params.id)
+        return res.json({ data: [updatedData], status: true, message: 'Day Book updated!!' })
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
     }
@@ -113,17 +122,6 @@ exports.getDayBook = async (req, res) => {
                     from: 'User',
                     localField: 'addedBy',
                     foreignField: '_id',
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ["$isDeleted", false] },
-                                    ]
-                                }
-                            }
-                        }
-                    ],
                     as: 'userData',
                 }
             },
@@ -152,12 +150,14 @@ exports.getDayBook = async (req, res) => {
                     )
                 }
                 else {
+                    var dateTo = new Date(req.body.search.dateTo)
+                    dateTo.setDate(dateTo.getDate() + 1);
                     query.push(
                         {
                             $match: {
                                 $and: [
                                     { 'creationDate': { $gte: new Date(req.body.search.dateFrom) } },
-                                    { 'creationDate': { $lte: new Date(req.body.search.dateTo) } }
+                                    { 'creationDate': { $lte: new Date(dateTo) } }
                                 ]
                             }
                         }
@@ -165,7 +165,6 @@ exports.getDayBook = async (req, res) => {
                 }
             }
         }
-        query.push({ $sort: { createdAt: -1 } })
         query.push(
             {
                 $group:
@@ -186,6 +185,7 @@ exports.getDayBook = async (req, res) => {
                             "webpageName": "$webPageData.webpage",
                             "webpageURL": "$webPageData.webpageUrl",
                             "webpage": "$webpage",
+                            "contentScheduler": "$contentScheduler",
                             "createdAt": "$createdAt"
                         }
                     }
@@ -202,7 +202,6 @@ exports.getDayBook = async (req, res) => {
         let page = (pageNo) ? parseInt(pageNo) : 1
         let limit = (perPage) ? parseInt(perPage) : 50
         let skip = (page - 1) * limit
-
         let endIndex = page * limit
         if (endIndex < totalData) {
             endIndex = page * limit
@@ -216,6 +215,16 @@ exports.getDayBook = async (req, res) => {
             PageNo: pageNo
         }
         const DayBookData = await DayBook.aggregate(query).skip(skip).limit(limit)
+        for (const element of DayBookData) {
+            for (let element1 of element.info) {
+                let conSchedulerTitle = null
+                if (element1.contentScheduler !== null) {
+                    const data = await ContentScheduler.findById(element1.contentScheduler)
+                    conSchedulerTitle = data.topicTitle
+                }
+                element1.contentSchedulerTitle = conSchedulerTitle
+            }
+        }
         return res.status(200).json({ data: [DayBookData, Pagination], status: true, message: "Data Listed Successfully" })
 
     } catch (error) {
@@ -276,17 +285,6 @@ exports.userDateWiseDayBook = async (req, res) => {
                     from: 'User',
                     localField: 'addedBy',
                     foreignField: '_id',
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ["$isDeleted", false] },
-                                    ]
-                                }
-                            }
-                        }
-                    ],
                     as: 'userData',
                 }
             },
@@ -303,9 +301,6 @@ exports.userDateWiseDayBook = async (req, res) => {
             },
             {
                 $unwind: '$webPageData'
-            },
-            {
-                $sort: { createdAt: -1 }
             }
         ]
         if (req.body && req.body.hasOwnProperty('search')) {
@@ -318,12 +313,14 @@ exports.userDateWiseDayBook = async (req, res) => {
                     )
                 }
                 else {
+                    var dateTo = new Date(req.body.search.dateTo)
+                    dateTo.setDate(dateTo.getDate() + 1);
                     query.push(
                         {
                             $match: {
                                 $and: [
                                     { 'creationDate': { $gte: new Date(req.body.search.dateFrom) } },
-                                    { 'creationDate': { $lte: new Date(req.body.search.dateTo) } }
+                                    { 'creationDate': { $lte: new Date(dateTo) } }
                                 ]
                             }
                         }
@@ -350,6 +347,7 @@ exports.userDateWiseDayBook = async (req, res) => {
                         "webpageName": "$webPageData.webpage",
                         "webpageURL": "$webPageData.webpageUrl",
                         "webpage": "$webpage",
+                        "contentScheduler": "$contentScheduler",
                         "createdAt": "$createdAt"
                     }
                 }
@@ -379,6 +377,16 @@ exports.userDateWiseDayBook = async (req, res) => {
             PageNo: pageNo
         }
         const DayBookData = await DayBook.aggregate(query).skip(skip).limit(limit)
+        for (const element of DayBookData) {
+            for (let element1 of element.info) {
+                let conSchedulerTitle = null
+                if (element1.contentScheduler !== null) {
+                    const data = await ContentScheduler.findById(element1.contentScheduler)
+                    conSchedulerTitle = data.topicTitle
+                }
+                element1.contentSchedulerTitle = conSchedulerTitle
+            }
+        }
         return res.status(200).json({ data: [DayBookData, Pagination], status: true, message: "Data Listed Successfully" })
 
     } catch (error) {
@@ -415,17 +423,6 @@ exports.userDayBookActivity = async (req, res) => {
                     from: 'User',
                     localField: 'addedBy',
                     foreignField: '_id',
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ["$isDeleted", false] },
-                                    ]
-                                }
-                            }
-                        }
-                    ],
                     as: 'userData',
                 }
             },
@@ -443,12 +440,14 @@ exports.userDayBookActivity = async (req, res) => {
                     )
                 }
                 else {
+                    var dateTo = new Date(req.body.search.dateTo)
+                    dateTo.setDate(dateTo.getDate() + 1);
                     query.push(
                         {
                             $match: {
                                 $and: [
                                     { 'creationDate': { $gte: new Date(req.body.search.dateFrom) } },
-                                    { 'creationDate': { $lte: new Date(req.body.search.dateTo) } }
+                                    { 'creationDate': { $lte: new Date(dateTo) } }
                                 ]
                             }
                         }
@@ -456,11 +455,6 @@ exports.userDayBookActivity = async (req, res) => {
                 }
             }
         }
-        query.push(
-            {
-                $sort: { 'createdAt': -1 }
-            }
-        )
         query.push(
             {
                 $group:
@@ -479,6 +473,7 @@ exports.userDayBookActivity = async (req, res) => {
                             "category": "$category",
                             "member": "$addedBy",
                             "webpage": "$webpage",
+                            "contentScheduler": "$contentScheduler",
                             "createdAt": "$createdAt"
                         }
                     }

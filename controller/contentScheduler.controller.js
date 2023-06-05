@@ -1,10 +1,13 @@
 const ContentScheduler = require('../model/ContentScheduler')
 const Activity = require('../model/ActivityContentScheduler')
 const paginate = require('../helper/paginate')
+const Website = require('../model/Website')
 
 exports.createContentScheduler = async (req, res) => {
     try {
         const data = { ...req.body }
+        const getCategory = await Website.findById(data.webpage)
+        data.category = getCategory.category
         const scheduler = await ContentScheduler.create(data)
         if (!scheduler) {
             return res.json({ data: [], status: false, message: 'Something went wrong! Not able to create Content Scheduler!!' })
@@ -219,7 +222,6 @@ exports.getContentScheduler = async (req, res, next) => {
             option['query'] = {};
         }
         option.query['isDeleted'] = false
-
         const scheduler = await paginate(option, ContentScheduler);
         return res.json({ data: [scheduler], status: true, message: "Data Listed Successfully" });
     } catch (error) {

@@ -1,7 +1,6 @@
 const PageView = require('../model/PageViews')
 const Activity = require('../model/ActivityPageViews')
 const paginate = require('../helper/paginate')
-// const moment = require('moment')
 const monthYearWiseData = require('../helper/monthYearWiseData')
 
 exports.createPageView = async (req, res) => {
@@ -135,7 +134,7 @@ exports.viewActivity = async (req, res) => {
 exports.history = async (req, res) => {
     try {
         const condition = [{ webpage: req.params.id }]
-        const finalData = await monthYearWiseData.month_year_wise_data_model(PageView, condition, "numberOfPageviews")
+        const finalData = await monthYearWiseData.month_year_wise_data_model(PageView, condition, "monthYear", "numberOfPageviews")
         return res.json({ data: finalData, status: true, message: "Last 1 Year's Data." })
     } catch (error) {
         return res.json({ data: [], status: false, message: error.message })
