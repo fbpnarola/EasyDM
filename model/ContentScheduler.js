@@ -12,6 +12,10 @@ const ContentSchedulerSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Website'
     },
+    category: {
+        type: String,
+        enum: ["Services", "Blogs", "Industry", "Career", "Technologies"]
+    },
     refereceLinks: [String],
     topicTitle: {
         type: String,
