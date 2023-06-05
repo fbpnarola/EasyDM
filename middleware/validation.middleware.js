@@ -3,9 +3,7 @@ const { check, validationResult } = require('express-validator')
 exports.checkUser = [
     check('name').trim().not().isEmpty().withMessage('Name is required!!!'),
     check('email').isEmail().withMessage("Please enter proper emailid!!"),
-    check('username').trim().not().isEmpty().withMessage('Username is required!!!'),
-    check('password').trim().not().isEmpty().withMessage('password is required!!!').isLength({ min: 8 }).not().withMessage("Password's length must be 8 digit!!"),
-    check('mobileNo').trim().not().isEmpty().withMessage('mobile number is required!!!').isLength(10).not().withMessage("Please enter proper mobile number!!")
+    check('password').trim().not().isEmpty().withMessage('password is required!!!')
 ]
 
 exports.checkWebsite = [
@@ -57,7 +55,7 @@ exports.valResult = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const error = errors.array()[0].msg;
-        return res.status(422).json({ data: [], status: false, message: error.message })
+        return res.status(422).json({ data: [], status: false, message: error })
     }
     next();
 };

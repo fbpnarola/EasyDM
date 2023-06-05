@@ -5,7 +5,7 @@ const imageMiddleware = require('../middleware/image.middleware')
 const authMiddleware = require('../middleware/auth.middleware')
 const { login, checkUser, valResult } = require('../middleware/validation.middleware')
 
-router.post('/registration', checkUser, valResult, imageMiddleware.single('avatar'), auth.registration)
+router.post('/registration', imageMiddleware.single('avatar'), checkUser, valResult, auth.registration)
 router.post('/login', login, valResult, auth.login)
 router.get('/me', authMiddleware, auth.me)
 router.post('/forgotLink', auth.forgotPassLink)
