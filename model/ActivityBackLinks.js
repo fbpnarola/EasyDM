@@ -27,8 +27,7 @@ const ActivityBackLinksSchema = new mongoose.Schema({
         type: Date,
         require: true
     },
-    monthYear: Date,
-    numberOfBacklinks: Number
+    date: Date
 }, {
     timestamps: true
 })
