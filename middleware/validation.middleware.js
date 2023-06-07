@@ -25,26 +25,12 @@ exports.checkContentScheduler = [
 
 ]
 
-exports.checkBackLinks = [
-    check('webpage').trim().not().isEmpty().withMessage('Webpage is required!!!'),
-    check('publishedOn').trim().not().isEmpty().withMessage('Published Date is required!!!'),
-    check('monthYear').trim().not().isEmpty().withMessage('Please select monthYear!!!'),
-    check('numberOfBacklinks').trim().not().isEmpty().withMessage('Qty of Backlinks are required!!!')
-]
-
 exports.checkPageViews = [
     check('webpage').trim().not().isEmpty().withMessage('Webpage is required!!!'),
     check('publishedOn').trim().not().isEmpty().withMessage('Published Date is required!!!'),
     check('monthYear').trim().not().isEmpty().withMessage('Please select monthYear!!!'),
     check('numberOfPageviews').trim().not().isEmpty().withMessage('Qty of Pageviews are required!!!')
 ]
-
-// exports.checkDayBooks = [
-//     check('data[0].webpage').trim().not().isEmpty().withMessage('Webpage is required!!!'),
-//     check('data[0].creationDate').trim().not().isEmpty().withMessage('Creation Date is required!!!'),
-//     check('data[0].category').trim().not().isEmpty().withMessage('Category is required!!!'),
-//     check('data[0].hours').trim().not().isEmpty().withMessage('Hours are required!!!')
-// ]
 
 exports.login = [
     check('username').trim().not().isEmpty().withMessage('Username is required!!!'),
